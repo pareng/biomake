@@ -27,10 +27,10 @@ CUTADAPT_OPTIONS=
 endif
 
 %$(READ1_LABEL).trimmed.fastq.gz: %$(READ1_LABEL).fastq.gz
-	$(CUTADAPT) $(CUTADAPT_OPTIONS) -a $(CUTADAPT_THREEPRIME) $< -o $(@:.gz=).tmp.gz > $*.cutadapt_metrics && mv $(@:.gz=).tmp.gz $@
+	$(CUTADAPT) $(CUTADAPT_OPTIONS) -a $(CUTADAPT_THREEPRIME) $< -o $(@:.gz=).tmp.gz > $(<:.fastq.gz=).cutadapt_metrics && mv $(@:.gz=).tmp.gz $@
 
 %$(READ2_LABEL).trimmed.fastq.gz: %$(READ2_LABEL).fastq.gz
-	$(CUTADAPT) $(CUTADAPT_OPTIONS) -a $(CUTADAPT_FIVEPRIME) $< -o $(@:.gz=).tmp.gz > $*.cutadapt_metrics && mv $(@:.gz=).tmp.gz $@
+	$(CUTADAPT) $(CUTADAPT_OPTIONS) -a $(CUTADAPT_FIVEPRIME) $< -o $(@:.gz=).tmp.gz > $(<:.fastq.gz=).cutadapt_metrics && mv $(@:.gz=).tmp.gz $@
 
 # resyncMates
 ifndef RESYNCMATES
