@@ -135,7 +135,7 @@ endif
 ##################################################
 # Precious 
 ##################################################
-.PRECIOUS: %.bai %$(READ1_LABEL).trimmed.sync.fastq.gz %$(READ2_LABEL).trimmed.sync.fastq.gz %.vcf %.raw.vcf %.filtered.vcf %.sort.merge.realign.recal.clip.bam
+.PRECIOUS: %.bai %$(READ1_LABEL).trimmed.sync.fastq.gz %$(READ2_LABEL).trimmed.sync.fastq.gz %.vcf %.raw.vcf %.filtered.vcf %.sort.merge.realign.recal.clip.bam %.recal_data.grp %.post_recal_data.grp
 
 # Clean
 # Multiple rm commands are needed, as the argument list can become too long if all files are listed on the same line

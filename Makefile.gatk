@@ -96,6 +96,18 @@ endif
 	$(eval KNOWN_SITES=$(addprefix -knownSites ,$(GATK_KNOWN_SITES)))
 	$(GATK_COMMAND) -T BaseRecalibrator $(GATK_BASERECALIBRATOR_OPTIONS) $(KNOWN_SITES) -I $< -o $@.tmp && mv $@.tmp $@
 
+# Run BQSR again, only to check covariation remaining after recalibration
+%.post_recal_data.grp: %.bam %.bai %.recal_data.grp
+	$(eval KNOWN_SITES=$(addprefix -knownSites ,$(GATK_KNOWN_SITES)))
+	$(GATK_COMMAND) -T BaseRecalibrator $(GATK_BASERECALIBRATOR_OPTIONS) $(KNOWN_SITES) -BQSR $*.recal_data.grp -I $< -o $@.tmp && mv $@.tmp $@
+
+# Make diagnostic plots 
+# Note: this requires several R packages to be installed
+# See https://github.com/broadgsa/gatk-protected/blob/master/public/R/scripts/org/broadinstitute/sting/utils/recalibration/BQSR.R
+%.recal.pdf: %.recal_data.grp %.post_recal_data.grp
+	$(GATK_COMMAND) -T AnalyzeCovariates -R $(GATK_REF) -L $(GATK_TARGET_REGIONS) -before $*.recal_data.grp -after $*.post_recal_data.grp -plots $@.tmp && mv $@.tmp $@
+
+# Apply recalibration
 ifndef GATK_PRINTREADS_OPTIONS
 GATK_PRINTREADS_OPTIONS=-R $(GATK_REF)
 endif
