@@ -15,13 +15,6 @@ MERGE_INPUT_SUFFIX=.trimmed.sync.sort.rg.bam
 SAMPLE_TARGET_SUFFIX=.sort.merge.realign.recal.clip.bam
 VCF_TARGET_SUFFIX=.sort.merge.raw.vcf
 
-# Targets
-FLOWCELL_TARGETS=$(subst $(READ1_LABEL).fastq.gz,$(MERGE_INPUT_SUFFIX),$(FASTQFILES))
-SAMPLE_TARGETS=$(foreach s,$(SAMPLES),$(s)/$(s)$(SAMPLE_TARGET_SUFFIX))
-# Raw vcf targets - these have to exist *before* realignment is run,
-# otherwise the default realignment rule is used
-VCF_TARGETS=$(foreach s,$(SAMPLES),$(s)/$(s)$(VCF_TARGET_SUFFIX))
-
 # Picard targets
 PICARD_DUPMETRICS_TARGETS ?= $(subst .recal.clip.bam,.dup_metrics,$(SAMPLE_TARGETS))
 PICARD_HSMETRICS_TARGETS ?= $(subst .recal.clip.bam,.hs_metrics,$(SAMPLE_TARGETS)) $(subst .bam,.hs_metrics,$(FLOWCELL_TARGETS))
@@ -195,6 +188,15 @@ include $(MAKEDIR)Makefile.picard
 include $(MAKEDIR)Makefile.gatk
 
 
+# Targets
+# Using := rather than = for these speeds up make a lot.
+# But for that to work these must be defined after the includes.
+FLOWCELL_TARGETS := $(subst $(READ1_LABEL).fastq.gz,$(MERGE_INPUT_SUFFIX),$(FASTQFILES))
+SAMPLE_TARGETS := $(foreach s,$(SAMPLES),$(s)/$(s)$(SAMPLE_TARGET_SUFFIX))
+# Raw vcf targets - these have to exist *before* realignment is run,
+# otherwise the default realignment rule is used
+VCF_TARGETS := $(foreach s,$(SAMPLES),$(s)/$(s)$(VCF_TARGET_SUFFIX))
+
 # Target rules
 flowcells: $(FLOWCELL_TARGETS)
 samples: $(FLOWCELL_TARGETS) $(VCF_TARGETS) $(SAMPLE_TARGETS)
@@ -224,10 +226,13 @@ all: $(FLOWCELL_TARGETS) $(HALO_TARGET_PREFIX).filtered.eval_metrics metrics.txt
 	RGID=$(firstword $(subst ., ,$*)) RGLB=lib RGPL=ILLUMINA RGPU=$(subst $(SPACE_CHAR),_,$(wordlist 1,3,$(subst _, ,$(notdir $@)))) \
 	RGSM=$(firstword $(subst /, ,$(firstword $(subst ., ,$*)))) CREATE_INDEX=true && mv $@.tmp $@; mv $@.tmp.bai $(@:.bam=).bai
 
-# The following rule has as requirement *all* flowcell targets, but
-# the input files to a given merge operation are the sample-specific
-# bam files. Unfortunately, it does not seem possible to filter the
-# flowcell targets based on a pattern in the prerequisite
-%.sort.merge.bam: $(FLOWCELL_TARGETS)
-	@$(eval INPUTFILES=$(addprefix INPUT=,$(filter $(dir $*)%, $(FLOWCELL_TARGETS))))
-	$(PICARD_JAVA) $(PICARD_HOME)/MergeSamFiles.jar $(INPUTFILES) O=$@.tmp $(PICARD_OPTIONS_COMMON) $(PICARD_MERGESAM_OPTIONS) && mv $@.tmp $@ && mv $@.tmp.bai $(@:.bam=).bai
+# Merge flowcell BAM files to make sample BAM files
+define create-halo-merge-bam-deps
+$1/$1.sort.merge.bam: $(filter $1/%,$(FLOWCELL_TARGETS))
+.SECONDARY: $1/$1.sort.merge.bam
+endef
+
+$(foreach s, $(SAMPLES), $(eval $(call create-halo-merge-bam-deps,$s)))
+
+%.sort.merge.bam:
+	$(PICARD_JAVA) $(PICARD_HOME)/MergeSamFiles.jar $(addprefix INPUT=,$^) O=$@.tmp $(PICARD_OPTIONS_COMMON) $(PICARD_MERGESAM_OPTIONS) && mv $@.tmp $@ && mv $@.tmp.bai $(@:.bam=).bai
