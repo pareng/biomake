@@ -5,6 +5,14 @@
 # Description: halo pipeline make rules
 #
 
+# The directory of this makefile
+MAKEDIR = $(dir $(lastword $(MAKEFILE_LIST)))
+
+# Makefile general includes
+# It's OK to put these first as they don't define any dependencies (only variables and recipes)
+include $(MAKEDIR)Makefile.ngsvars
+include $(MAKEDIR)Makefile.general
+
 # Output name
 ifndef HALO_TARGET_PREFIX
 HALO_TARGET_PREFIX=halo
@@ -15,11 +23,23 @@ MERGE_INPUT_SUFFIX=.trimmed.sync.sort.rg.bam
 SAMPLE_TARGET_SUFFIX=.sort.merge.realign.recal.clip.bam
 VCF_TARGET_SUFFIX=.sort.merge.raw.vcf
 
+# Targets
+# Using := rather than = for these speeds up make a lot.
+# But for that to work these must be defined after including Makefile.ngsvars (where e.g. READ1_LABEL is defined)
+FLOWCELL_TARGETS := $(subst $(READ1_LABEL).fastq.gz,$(MERGE_INPUT_SUFFIX),$(FASTQFILES))
+SAMPLE_TARGETS := $(foreach s,$(SAMPLES),$(s)/$(s)$(SAMPLE_TARGET_SUFFIX))
+# Raw vcf targets - these have to exist *before* realignment is run,
+# otherwise the default realignment rule is used
+VCF_TARGETS := $(foreach s,$(SAMPLES),$(s)/$(s)$(VCF_TARGET_SUFFIX))
+
 # Picard targets
 PICARD_DUPMETRICS_TARGETS ?= $(subst .recal.clip.bam,.dup_metrics,$(SAMPLE_TARGETS))
 PICARD_HSMETRICS_TARGETS ?= $(subst .recal.clip.bam,.hs_metrics,$(SAMPLE_TARGETS)) $(subst .bam,.hs_metrics,$(FLOWCELL_TARGETS))
 PICARD_INSERTMETRICS_TARGETS ?= $(subst .recal.clip.bam,.insert_metrics,$(SAMPLE_TARGETS)) $(subst .bam,.insert_metrics,$(FLOWCELL_TARGETS))
 PICARD_ALIGNMETRICS_TARGETS ?= $(subst .recal.clip.bam,.align_metrics,$(SAMPLE_TARGETS)) $(subst .bam,.align_metrics,$(FLOWCELL_TARGETS))
+
+# Set VariantEval options to stratify by sample
+GATK_VARIANT_EVAL_OPTIONS=-ST Filter -ST Sample --doNotUseAllStandardModules --evalModule CompOverlap --evalModule CountVariants --evalModule TiTvVariantEvaluator
 
 # See phony targets after include statements
 
@@ -170,32 +190,23 @@ halo-settings: halo-header print-HALO_TARGET_PREFIX print-HALO_BATCH_SIZE print-
 ##############################
 # Include files
 #
-# These are and should be put last since we use ifndef statements to
-# check if options have been set. The included options should be the
-# last resort.
+# These are and should be put last so that they may declare
+# dependencies using the variables set above. For example,
+# Makefile.picard sets dependencies using the various PICARD_*_TARGETS
+# variables set above.
+#
+# Note that the included files use ifndef statements when setting
+# variables to check if those alredy have been set. The included
+# options should be the last resort.
 #
 ##############################
-# The directory of this makefile
-MAKEDIR = $(dir $(lastword $(MAKEFILE_LIST)))
 
 # Makefile includes
-include $(MAKEDIR)Makefile.ngsvars
-include $(MAKEDIR)Makefile.general
 include $(MAKEDIR)Makefile.sequenceprocessing
 include $(MAKEDIR)Makefile.samtools
 include $(MAKEDIR)Makefile.bwa
 include $(MAKEDIR)Makefile.picard
 include $(MAKEDIR)Makefile.gatk
-
-
-# Targets
-# Using := rather than = for these speeds up make a lot.
-# But for that to work these must be defined after the includes.
-FLOWCELL_TARGETS := $(subst $(READ1_LABEL).fastq.gz,$(MERGE_INPUT_SUFFIX),$(FASTQFILES))
-SAMPLE_TARGETS := $(foreach s,$(SAMPLES),$(s)/$(s)$(SAMPLE_TARGET_SUFFIX))
-# Raw vcf targets - these have to exist *before* realignment is run,
-# otherwise the default realignment rule is used
-VCF_TARGETS := $(foreach s,$(SAMPLES),$(s)/$(s)$(VCF_TARGET_SUFFIX))
 
 # Target rules
 flowcells: $(FLOWCELL_TARGETS)
