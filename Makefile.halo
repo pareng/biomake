@@ -121,7 +121,7 @@ endif
 # 5. Clipping
 # Default recipe, set options
 ifndef GATK_CLIPREADS_OPTIONS
-GATK_CLIPREADS_OPTIONS=--cyclesToTrim 1-5 --clipRepresentation WRITE_NS -R $(GATK_REF)
+GATK_CLIPREADS_OPTIONS=--cyclesToTrim 1-5 --clipRepresentation SOFTCLIP_BASES -rf UnmappedRead -R $(GATK_REF)
 endif
 
 # 6. Generic genotyping
