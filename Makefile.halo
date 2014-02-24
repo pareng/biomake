@@ -132,6 +132,9 @@ endif
 ifneq ($(GATK_TARGET_REGIONS),)
 GATK_UNIFIEDGENOTYPER_OPTIONS+=-L $(GATK_TARGET_REGIONS)
 endif
+# Alternative recipe, not using the merged BAM file
+$(HALO_TARGET_PREFIX).noMerge.vcf: $(SAMPLE_TARGETS)
+	$(GATK_COMMAND) -T UnifiedGenotyper $(GATK_UNIFIEDGENOTYPER_OPTIONS) $(addprefix -I ,$^) -o $@.tmp && mv $@.tmp $@  && mv $@.tmp.idx $@.idx
 
 # 7. Variant filtration - set specific options for Haloplex
 # Default recipe, halo-specific options
