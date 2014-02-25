@@ -148,6 +148,9 @@ ifndef GATK_VARIANT_EVAL_OPTIONS
 GATK_VARIANT_EVAL_OPTIONS=-ST Filter --doNotUseAllStandardModules --evalModule CompOverlap --evalModule CountVariants --evalModule TiTvVariantEvaluator --evalModule ValidationReport
 endif
 
+%.variant_eval.pdf: %.filtered.eval_metrics
+	$(MAKEDIR)scripts/plotVariantEvalBySample.R $< $@.tmp && mv $@.tmp $@
+
 ##################################################
 # Precious 
 ##################################################
