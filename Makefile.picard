@@ -107,20 +107,20 @@ metrics: dupmetrics hsmetrics insertmetrics alignmetrics
 # Summaries
 # NB: these rules require scilife directory structure SAMPLE/FLOWCELL/SAMPLE.fastq
 align_metrics.txt: $(PICARD_ALIGNMETRICS_TARGETS)
-	@for f in $(sort $(PICARD_ALIGNMETRICS_TARGETS)); do bn=$$(dirname $$f); fc=$$(basename $$bn); sampledir=$$(dirname $$bn); sample=$$(basename $$sampledir); $(AWK) -v SAMPLE=$$sample -v FLOWCELL=$$fc '{OFS="\t";if (NR==7) print $$0,"SAMPLE_ID","FLOWCELL", "INPUT_FILE"}' $$f; done | head -1 > $@.tmp;
-	@for f in $(sort $(PICARD_ALIGNMETRICS_TARGETS)); do bn=$$(dirname $$f); fc=$$(basename $$bn); sampledir=$$(dirname $$bn); sample=$$(basename $$sampledir); $(AWK) -v SAMPLE=$$sample -v FLOWCELL=$$fc -v INPUT_FILE=$$f -v BN=$$(basename $$f) '{OFS="\t"; if (match(BN, SAMPLE)==0 || SAMPLE==".") {SAMPLE = FLOWCELL; FLOWCELL="NA"}  if (NR==8 || NR==9 || NR==10) print $$0,SAMPLE,FLOWCELL,INPUT_FILE}' $$f; done >> $@.tmp && mv $@.tmp $@;
+	@$(AWK) '{OFS="\t";if (NR==7) print $$0,"SAMPLE_ID","FLOWCELL", "INPUT_FILE"}' $< > $@.tmp;
+	@for f in $(sort $^); do bn=$$(dirname $$f); fc=$$(basename $$bn); sampledir=$$(dirname $$bn); sample=$$(basename $$sampledir); $(AWK) -v SAMPLE=$$sample -v FLOWCELL=$$fc -v INPUT_FILE=$$f '{OFS="\t"; if (match(SAMPLE, "$(SAMPLE_PREFIX)")!=1) {SAMPLE = FLOWCELL; FLOWCELL="NA"}  if (NR==8 || NR==9 || NR==10) print $$0,SAMPLE,FLOWCELL,INPUT_FILE}' $$f; done >> $@.tmp && mv $@.tmp $@;
 
 dup_metrics.txt: $(PICARD_DUPMETRICS_TARGETS)
-	@for f in $(sort $(PICARD_DUPMETRICS_TARGETS)); do bn=$$(dirname $$f); fc=$$(basename $$bn); sampledir=$$(dirname $$bn); sample=$$(basename $$sampledir); $(AWK) -v SAMPLE=$$sample -v FLOWCELL=$$fc '{OFS="\t";if (NR==7) print $$0,"SAMPLE_ID","FLOWCELL", "INPUT_FILE"}' $$f; done | head -1 > $@.tmp;
-	@for f in $(sort $(PICARD_DUPMETRICS_TARGETS)); do bn=$$(dirname $$f); fc=$$(basename $$bn); sampledir=$$(dirname $$bn); sample=$$(basename $$sampledir); $(AWK) -v SAMPLE=$$sample -v FLOWCELL=$$fc -v INPUT_FILE=$$f -v BN=$$(basename $$f) '{OFS="\t";  if (match(BN, SAMPLE)==0 || SAMPLE==".") {SAMPLE = FLOWCELL; FLOWCELL="NA"} if (NR==8) print $$0,SAMPLE,FLOWCELL,INPUT_FILE}' $$f; done >> $@.tmp && mv $@.tmp $@;
+	@$(AWK) '{OFS="\t";if (NR==7) print $$0,"SAMPLE_ID","FLOWCELL", "INPUT_FILE"}' $< > $@.tmp;
+	@for f in $(sort $^); do bn=$$(dirname $$f); fc=$$(basename $$bn); sampledir=$$(dirname $$bn); sample=$$(basename $$sampledir); $(AWK) -v SAMPLE=$$sample -v FLOWCELL=$$fc -v INPUT_FILE=$$f '{OFS="\t"; if (match(SAMPLE, "$(SAMPLE_PREFIX)")!=1) {SAMPLE = FLOWCELL; FLOWCELL="NA"} if (NR==8) print $$0,SAMPLE,FLOWCELL,INPUT_FILE}' $$f; done >> $@.tmp && mv $@.tmp $@;
 
 insert_metrics.txt: $(PICARD_INSERTMETRICS_TARGETS)
-	@for f in $(sort $(PICARD_INSERTMETRICS_TARGETS)); do bn=$$(dirname $$f); fc=$$(basename $$bn); sampledir=$$(dirname $$bn); sample=$$(basename $$sampledir); $(AWK) -v SAMPLE=$$sample -v FLOWCELL=$$fc '{OFS="\t";if (NR==7) print $$0,"SAMPLE_ID","FLOWCELL", "INPUT_FILE"}' $$f; done | head -1 > $@.tmp;
-	@for f in $(sort $(PICARD_INSERTMETRICS_TARGETS)); do bn=$$(dirname $$f); fc=$$(basename $$bn); sampledir=$$(dirname $$bn); sample=$$(basename $$sampledir); $(AWK) -v SAMPLE=$$sample -v FLOWCELL=$$fc -v INPUT_FILE=$$f -v BN=$$(basename $$f) '{OFS="\t"; if (match(BN, SAMPLE)==0 || SAMPLE==".") {SAMPLE = FLOWCELL; FLOWCELL="NA"} if (NR==8) print $$0,SAMPLE,FLOWCELL,INPUT_FILE}' $$f; done >> $@.tmp && mv $@.tmp $@;
+	@$(AWK) '{OFS="\t";if (NR==7) print $$0,"SAMPLE_ID","FLOWCELL", "INPUT_FILE"}' $< > $@.tmp;
+	@for f in $(sort $^); do bn=$$(dirname $$f); fc=$$(basename $$bn); sampledir=$$(dirname $$bn); sample=$$(basename $$sampledir); $(AWK) -v SAMPLE=$$sample -v FLOWCELL=$$fc -v INPUT_FILE=$$f '{OFS="\t"; if (match(SAMPLE, "$(SAMPLE_PREFIX)")!=1) {SAMPLE = FLOWCELL; FLOWCELL="NA"} if (NR==8) print $$0,SAMPLE,FLOWCELL,INPUT_FILE}' $$f; done >> $@.tmp && mv $@.tmp $@;
 
 hs_metrics.txt: $(PICARD_HSMETRICS_TARGETS)
-	@for f in $(sort $(PICARD_HSMETRICS_TARGETS)); do bn=$$(dirname $$f); fc=$$(basename $$bn); sampledir=$$(dirname $$bn); sample=$$(basename $$sampledir); $(AWK) -v SAMPLE=$$sample -v FLOWCELL=$$fc '{OFS="\t";if (NR==7) print $$0,"SAMPLE_ID","FLOWCELL", "INPUT_FILE"}' $$f; done | head -1 > $@.tmp;
-	@for f in $(sort $(PICARD_HSMETRICS_TARGETS)); do bn=$$(dirname $$f); fc=$$(basename $$bn); sampledir=$$(dirname $$bn); sample=$$(basename $$sampledir); $(AWK) -v SAMPLE=$$sample -v FLOWCELL=$$fc -v INPUT_FILE=$$f -v BN=$$(basename $$f) '{OFS="\t"; if (match(BN, SAMPLE)==0 || SAMPLE==".") {SAMPLE = FLOWCELL; FLOWCELL="NA"} if (NR==8) print $$0,SAMPLE,FLOWCELL,INPUT_FILE}' $$f; done >> $@.tmp && mv $@.tmp $@;
+	@$(AWK) '{OFS="\t";if (NR==7) print $$0,"SAMPLE_ID","FLOWCELL", "INPUT_FILE"}' $< > $@.tmp;
+	@for f in $(sort $^); do bn=$$(dirname $$f); fc=$$(basename $$bn); sampledir=$$(dirname $$bn); sample=$$(basename $$sampledir); $(AWK) -v SAMPLE=$$sample -v FLOWCELL=$$fc -v INPUT_FILE=$$f '{OFS="\t"; if (match(SAMPLE, "$(SAMPLE_PREFIX)")!=1) {SAMPLE = FLOWCELL; FLOWCELL="NA"} if (NR==8) print $$0,SAMPLE,FLOWCELL,INPUT_FILE}' $$f; done >> $@.tmp && mv $@.tmp $@;
 
 metrics.txt: align_metrics.txt dup_metrics.txt insert_metrics.txt hs_metrics.txt
 
