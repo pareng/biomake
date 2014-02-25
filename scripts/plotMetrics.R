@@ -11,8 +11,8 @@
 library(utils)
 library(lattice)
 library(RColorBrewer)
-cpal <- colorRampPalette(brewer.pal(9,"Paired"))(1000)
-cpal.out <- c("grey", rep(brewer.pal(10, "Paired"), 10))
+cpal <- brewer.pal(8,"Dark2")
+cpal.out <- c("grey", rep(brewer.pal(9, "Paired"), 10))
 
 # Function definitions
 
@@ -245,12 +245,12 @@ align <- function(y) {
 
     if(nrow(x) > 0) {
       print(
-        stripplot(100 * PCT_PF_READS_ALIGNED ~ SAMPLE_ID | CATEGORY,
-                  groups=FLOWCELL, data=x, auto.key=list(space="right"),
-                  scales=list(x=list(rot=45, draw=FALSE)),
-                  ylab="Aligned reads (percent)", xlab="Sample",
-                  main="Mapping statistics, percentage, grouped by flowcell",
-                  par.settings=simpleTheme(pch=19, col=cpal)
+        stripplot(100 * PCT_PF_READS_ALIGNED ~ SAMPLE_ID | CATEGORY, data=x,
+                  auto.key=list(space="bottom"), scales=list(x=list(rot=45, draw=FALSE)),
+                  ylab="Aligned reads (%)", xlab="",
+                  main="Percent aligned reads per sample, grouped by flowcell",
+                  par.settings=simpleTheme(pch=19, col=cpal), as.table=TRUE, layout=c(3,1),
+                  groups=FLOWCELL 
                   )
         )
     }
