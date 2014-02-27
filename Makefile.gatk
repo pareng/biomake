@@ -23,8 +23,11 @@ endif
 ifndef GATK_JAVA_TMPDIR
 GATK_JAVA_TMPDIR=$(JAVA_TMPDIR)
 endif
+ifndef GATK_LOG_LEVEL
+GATK_LOG_LEVEL=INFO
+endif
 ifndef GATK_COMMAND
-GATK_COMMAND=java -Xmx$(GATK_JAVA_MEM) -Djava.io.tmpdir=$(GATK_JAVA_TMPDIR) -jar $(GATK_JAR)
+GATK_COMMAND=java -Xmx$(GATK_JAVA_MEM) -Djava.io.tmpdir=$(GATK_JAVA_TMPDIR) -jar $(GATK_JAR) -l $(GATK_LOG_LEVEL)
 endif
 ifndef GATK_REF
 GATK_REF=$(REF)
