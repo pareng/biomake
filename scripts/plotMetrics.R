@@ -16,6 +16,11 @@ cpal.out <- c("grey", rep(brewer.pal(9, "Paired"), 10))
 
 # Function definitions
 
+remove.sample.prefix <- function(ids, prefix) {
+  levels(ids) <- sub(paste("^", prefix, sep=""), "", levels(ids))
+  return(ids)
+}
+
 label.outliers <- function(x, x.labels, f=rep(1,nrow(x))) {
   ## Make sure x is an array (we might get a vector)
   x <- cbind(x) 
@@ -257,16 +262,19 @@ align <- function(y) {
 }
 
 args <- commandArgs(TRUE)
-if (length(args) != 3) {
-    message("Usage: plotMetrics.R infile outfile type!")
+if (length(args) != 4) {
+    message("Usage: plotMetrics.R infile outfile type sample-prefix")
     quit("yes")
 }
 
 infile <- args[1]
 outfile <- args[2]
 type <- args[3]
+sample.prefix <- args[4]
 
 x <- read.table(infile, header=TRUE, sep="\t")
+
+if(sample.prefix != '-') x$SAMPLE_ID <- remove.sample.prefix(x$SAMPLE_ID, sample.prefix)
 
 pdf(outfile)
 type <- match.arg(type, choices = c("align", "insert", "dup", "hs"))

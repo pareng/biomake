@@ -129,7 +129,7 @@ ifndef PLOTMETRICS
 PLOTMETRICS=$(MAKEDIR)scripts/plotMetrics.R
 endif
 %_metrics.pdf: %_metrics.txt
-	$(PLOTMETRICS) $< $@.tmp $* && mv $@.tmp $@
+	$(PLOTMETRICS) $< $@.tmp $* $(SAMPLE_PREFIX) && mv $@.tmp $@
 
 
 # Add read group information
