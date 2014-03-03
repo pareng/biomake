@@ -139,7 +139,7 @@ $(HALO_TARGET_PREFIX).noMerge.vcf: $(SAMPLE_TARGETS)
 # 7. Variant filtration - set specific options for Haloplex
 # Default recipe, halo-specific options
 ifndef GATK_VARIANTFILTRATION_OPTIONS
-GATK_VARIANTFILTRATION_OPTIONS=--clusterWindowSize 10 --clusterSize 3 --filterExpression "MQ0 >= 4 && ((MQ0 / (1.0 * DP)) > 0.1)" --filterName "HARD_TO_VALIDATE" --filterExpression "DP < 10" --filterName "LowCoverage" --filterExpression "QUAL < 30.0" --filterName "VeryLowQual" --filterExpression "QUAL > 30.0 && QUAL < 50.0" --filterName "LowQual" --filterExpression "QD < 1.5" --filterName "LowQD"
+GATK_VARIANTFILTRATION_OPTIONS=--clusterWindowSize 10 --clusterSize 3 --filterExpression "MQ0 >= 4 && ((MQ0 / (1.0 * DP)) > 0.1)" --filterName "HARD_TO_VALIDATE" --filterExpression "DP < 10" --filterName "LowCoverage" --filterExpression "QUAL < 30.0" --filterName "VeryLowQual" --filterExpression "QUAL >= 30.0 && QUAL < 50.0" --filterName "LowQual" --filterExpression "QD < 3.0" --filterName "LowQD" --filterExpression "ReadPosRankSum < -40.0" --filterName "LowReadPosRankSum"
 endif
 
 # 8. Variant evaluation
@@ -253,3 +253,5 @@ $(foreach s, $(SAMPLES), $(eval $(call create-halo-merge-bam-deps,$s)))
 
 %.sort.merge.bam:
 	$(PICARD_JAVA) $(PICARD_HOME)/MergeSamFiles.jar $(addprefix INPUT=,$^) O=$@.tmp $(PICARD_OPTIONS_COMMON) $(PICARD_MERGESAM_OPTIONS) && mv $@.tmp $@ && mv $@.tmp.bai $(@:.bam=).bai
+
+.SECONDARY: $(HALO_TARGET_PREFIX).bam
