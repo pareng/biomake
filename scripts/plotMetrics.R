@@ -1,9 +1,9 @@
 #! /usr/bin/Rscript --vanilla
-# File: plotNgstk.R
+# File: plotMetrics.R
 #
-# Copyright (C) 2013 by Per Unneberg
+# Copyright (C) 2013-2014 by Per Unneberg
 #
-# Author: Per Unneberg
+# Authors: Per Unneberg, Par Engstrom
 #
 # Description:
 #
@@ -21,7 +21,7 @@ remove.sample.prefix <- function(ids, prefix) {
   return(ids)
 }
 
-label.outliers <- function(x, x.labels, f=rep(1,nrow(x))) {
+label.outliers <- function(x, x.labels, f=rep(1, nrow(cbind(x)))) {
   ## Make sure x is an array (we might get a vector)
   x <- cbind(x) 
   ## Check arguments
@@ -67,6 +67,52 @@ hs <- function(y) {
     x <- y[is.na(y$FLOWCELL),]
     x <- x[order(x$SAMPLE_ID),]
 
+    ## Total reads
+    print(
+        stripplot(TOTAL_READS/1e6 ~ SAMPLE_ID, data=x,
+                  scales=list(x=list(draw=FALSE)),
+                  ylab="Million reads", xlab="Sample",
+                  main="Total reads per sample\n(may or may not include unmapped reads)",
+                  par.settings=simpleTheme(pch=19, col=cpal.out),
+                  auto.key=list(space="right"),
+                  groups = label.outliers(x$TOTAL_READS, x$SAMPLE_ID)
+                  )
+        )   
+
+    ## Informative reads
+    print(
+        stripplot(PF_UQ_READS_ALIGNED/1e6 ~ SAMPLE_ID, data=x,
+                  scales=list(x=list(draw=FALSE)),
+                  ylab="Million reads", xlab="Sample",
+                  main="Informative reads per sample\n(unique reads with positive mapping score)",
+                  par.settings=simpleTheme(pch=19, col=cpal.out),
+                  auto.key=list(space="right"),
+                  groups = label.outliers(x$PF_UQ_READS_ALIGNED, x$SAMPLE_ID)
+                  )
+        )   
+
+    ## Percent of reads passing filter
+    print(
+        stripplot(100*PCT_PF_READS ~ SAMPLE_ID, data=x,
+                  scales=list(x=list(draw=FALSE)),
+                  ylab="Reads (%)", xlab="Sample", main="Percent of reads passing vendor filter",
+                  par.settings=simpleTheme(pch=19, col=cpal.out),
+                  auto.key=list(space="right"),
+                  groups = label.outliers(x$PCT_PF_READS, x$SAMPLE_ID)
+                  )
+        )   
+
+    ## Percent of reads passing filter and duplicate removal
+    print(
+        stripplot(100*PCT_PF_UQ_READS ~ SAMPLE_ID, data=x,
+                  scales=list(x=list(draw=FALSE)),
+                  ylab="Reads (%)", xlab="Sample", main="Percent of reads passing vendor filter and duplicate removal",
+                  par.settings=simpleTheme(pch=19, col=cpal.out),
+                  auto.key=list(space="right"),
+                  groups = label.outliers(x$PCT_PF_UQ_READS, x$SAMPLE_ID)
+                  )
+        )   
+
     ## Percent missed targets
     print(
         stripplot(100*ZERO_CVG_TARGETS_PCT ~ SAMPLE_ID, data=x,
@@ -109,7 +155,7 @@ hs <- function(y) {
                   auto.key=list(space="right"),
                   groups = label.outliers(x$PCT_USABLE_BASES_ON_TARGET, x$SAMPLE_ID)
                   )
-        )   
+        )
 
     ## Percent usable bases on target (out of all sequenced bases)
     print(
@@ -129,7 +175,7 @@ hs <- function(y) {
                main="Total sequenced reads versus target coverage",
                par.settings=simpleTheme(pch=19, col=cpal.out),
                auto.key=list(space="right"),
-               groups = label.outliers(cbind(PCT_TARGET_BASES_10X, x$TOTAL_READS), x$SAMPLE_ID)
+               groups = label.outliers(cbind(x$PCT_TARGET_BASES_10X, x$TOTAL_READS), x$SAMPLE_ID)
                )
         )
     
@@ -179,15 +225,52 @@ hs <- function(y) {
 
 }
 
-align <- function(y) {
 
-    ## Fix order of category factor levels
-    stopifnot(all(levels(y$CATEGORY) == c("FIRST_OF_PAIR", "PAIR", "SECOND_OF_PAIR")))
-    levels(y$CATEGORY) <- c("Read 1", "Pair", "Read 2") # Rename levels
-    y$CATEGORY <- factor(y$CATEGORY, levels=c("Read 1", "Read 2", "Pair")) # Reorder levels
-  
+all.aligned <- function(y) {
+
     ## Sample-based plots
-    x <- y[is.na(y$FLOWCELL) & y$CATEGORY=="Pair",]
+    x <- y[is.na(y$FLOWCELL) & y$CATEGORY %in% c("Pair", "Unpaired"),]
+    x <- x[order(x$SAMPLE_ID),]
+
+    print(
+        stripplot(PF_READS_ALIGNED/1e6 ~ SAMPLE_ID, data=x,
+                  scales=list(x=list(rot=45, draw=FALSE)),
+                  ylab="Aligned reads (millions)", xlab="Sample", main="Aligned reads per sample",
+                  par.settings=simpleTheme(pch=19, col=cpal.out),
+                  auto.key=list(space="right"),
+                  groups = label.outliers(x$TOTAL_READS, x$SAMPLE_ID)
+                  )
+        )
+    
+    print(
+        stripplot(PF_READS_ALIGNED/1e6 ~ SAMPLE_ID, data=x,
+                  scales=list(x=list(rot=45, draw=FALSE), y=list(log=TRUE, equispaced.log=FALSE)),
+                  ylab="Aligned reads (millions)", xlab="Sample", main="Aligned reads per sample (log scale)",
+                  par.settings=simpleTheme(pch=19, col=cpal.out),
+                  auto.key=list(space="right"),
+                  groups = label.outliers(log10(x$TOTAL_READS), x$SAMPLE_ID)
+                  )
+        )
+      
+    ## Based on all categories
+    x <- y[is.na(y$FLOWCELL),]
+    x <- x[order(x$SAMPLE_ID),]
+
+    print(
+        stripplot(PF_READS_ALIGNED/1e6 ~ CATEGORY | SAMPLE_ID, data=x,
+                  scales=list(x=list(rot=45), y=list(log=TRUE, equispaced.log=FALSE)),
+                  ylab="Aligned Reads (millions)", xlab="Category", main="Mapping statistics, aligned reads per sample",
+                  par.settings=simpleTheme(col=cpal[1], pch=21), as.table=TRUE,
+                  layout=c(6,3), par.strip.text=list(cex=0.5)
+                  )
+      )
+}
+
+
+some.aligned <- function(y) {
+
+    ## Sample-based plots
+    x <- y[is.na(y$FLOWCELL) & y$CATEGORY %in% c("Pair", "Unpaired"),]
     x <- x[order(x$SAMPLE_ID),]
 
     print(
@@ -229,7 +312,8 @@ align <- function(y) {
         stripplot(100 * PCT_PF_READS_ALIGNED ~ SAMPLE_ID | CATEGORY, data=x,
                   auto.key=list(space="bottom", columns=3), scales=list(x=list(rot=45, draw=FALSE)),
                   ylab="Aligned reads (%)", xlab="", main="Percent aligned reads per sample",
-                  par.settings=simpleTheme(pch=19, col=cpal.out), as.table=TRUE, layout=c(3,1),
+                  par.settings=simpleTheme(pch=19, col=cpal.out), as.table=TRUE,
+                  layout=c(nlevels(x$CATEGORY),1),
                   groups=label.outliers(x$PCT_PF_READS_ALIGNED, x$SAMPLE_ID, f=x$CATEGORY),
                   )
         )
@@ -243,7 +327,7 @@ align <- function(y) {
                   layout=c(6,3), par.strip.text=list(cex=0.5)
                   )
       )
-
+    
     # Flowcell-based plots
     x <- y[!is.na(y$FLOWCELL),]
     x <- x[order(x$SAMPLE_ID),]
@@ -261,10 +345,31 @@ align <- function(y) {
     }
 }
 
+
+align <- function(y) {
+
+    ## Fix order of category factor levels
+    if(all(levels(y$CATEGORY) == c("FIRST_OF_PAIR", "PAIR", "SECOND_OF_PAIR"))) {
+        levels(y$CATEGORY) <- c("Read 1", "Pair", "Read 2") # Rename levels
+        y$CATEGORY <- factor(y$CATEGORY, levels=c("Read 1", "Read 2", "Pair")) # Reorder levels
+    } else if(all(levels(y$CATEGORY) == "UNPAIRED")) {
+        levels(y$CATEGORY) <- "Unpaired"
+    } else {
+        stop("Unexpected CATEGORY levels")
+    }
+
+    ## Check if all reads are aligned (this happens if unaligned reads
+    ## have been excluded from the BAM files only contain aligned
+    ## reads), and plot accordingly
+    if(all(x$TOTAL_READS == x$PF_READS_ALIGNED)) all.aligned(y) else some.aligned(y)
+}
+
+
+
 args <- commandArgs(TRUE)
 if (length(args) != 4) {
     message("Usage: plotMetrics.R infile outfile type sample-prefix")
-    quit("yes")
+    quit("no")
 }
 
 infile <- args[1]
@@ -274,6 +379,7 @@ sample.prefix <- args[4]
 
 x <- read.table(infile, header=TRUE, sep="\t")
 
+x$SAMPLE_ID <- as.factor(x$SAMPLE_ID) # Make sure sample IDs aren't treated as numeric
 if(sample.prefix != '-') x$SAMPLE_ID <- remove.sample.prefix(x$SAMPLE_ID, sample.prefix)
 
 pdf(outfile)
